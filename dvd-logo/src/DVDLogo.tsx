@@ -9,6 +9,9 @@ interface DVDLogoState {
     r: number;
     g: number;
     b: number;
+    collisionCount: number;
+    collisionCountForCorner: number;
+    goingToCorner: boolean;
 }
 
 interface DVDLogoProps {
@@ -32,7 +35,10 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
             ySpeed: 1,
             r: DVDLogo.getRandomNumber(100, 256),
             g: DVDLogo.getRandomNumber(100, 256),
-            b: DVDLogo.getRandomNumber(100, 256)
+            b: DVDLogo.getRandomNumber(100, 256),
+            collisionCount: 0,
+            collisionCountForCorner: 10,
+            goingToCorner: false
         }
     }
 
@@ -42,6 +48,70 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
             g: DVDLogo.getRandomNumber(100, 256),
             b: DVDLogo.getRandomNumber(100, 256)
         })
+    }
+
+    moveDVDLogoToCorner() {
+        if(!this.state.goingToCorner){ 
+            this.moveDirectionOfLogoToCorner();
+        };
+
+        if (this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0) {
+            const newXPosition = this.state.x < widthDVDLogo/2 ? 1 : this.props.width - widthDVDLogo - 1;
+            const newYPosition = this.state.y < heightDVDLogo/2 ? 1 : this.props.height - heightDVDLogo - 1;
+            const newXSpeed = -Math.abs(this.state.xSpeed)/this.state.xSpeed;
+            const newYSpeed = -Math.abs(this.state.ySpeed)/this.state.ySpeed;
+            const newCollisionAmountNeeded = 5 + Math.floor(Math.random() * 15);
+            this.setState({
+                x: newXPosition,
+                y: newYPosition,
+                xSpeed: newXSpeed,
+                ySpeed: newYSpeed,
+                collisionCount: 0,
+                goingToCorner: false,
+                collisionCountForCorner: newCollisionAmountNeeded
+            });
+            this.setRandomColors();
+        }
+    }
+
+    moveDirectionOfLogoToCorner() {
+        let targetCorner = this.getTargetCorner();
+        let newXSpeed = targetCorner.x - this.state.x;
+        let newYSpeed = targetCorner.y - this.state.y;
+        while(Math.abs(newXSpeed) > 1.4 || Math.abs(newYSpeed) > 1.4) {
+            newXSpeed = newXSpeed / 2;
+            newYSpeed = newYSpeed / 2;
+        }
+        this.setState({
+            goingToCorner: true,
+            xSpeed: newXSpeed,
+            ySpeed: newYSpeed
+        });
+    }
+
+    getTargetCorner() {
+        let targetCorner = {x:0, y:0};
+        if( this.state.xSpeed > 0){
+            targetCorner.x = this.props.width - widthDVDLogo;
+        }
+        if( this.state.ySpeed > 0){
+            targetCorner.y = this.props.height - heightDVDLogo;
+        } 
+        return targetCorner;
+    };
+
+    moveDVDLogoNormally() {
+        if (this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0) {
+            const numCollisions = this.state.collisionCount + 1;
+            this.setState({xSpeed: -this.state.xSpeed, collisionCount: numCollisions});
+            this.setRandomColors();
+        }
+
+        if (this.state.y + heightDVDLogo >= this.props.height || this.state.y <= 0) {
+            const numCollisions = this.state.collisionCount + 1;
+            this.setState({ySpeed: -this.state.ySpeed, collisionCount: numCollisions});
+            this.setRandomColors();
+        }
     }
 
     static getRandomNumber(min: number, max: number): number {
@@ -58,14 +128,10 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
             y: this.state.y + this.state.ySpeed
         });
 
-        if (this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0) {
-            this.setState({xSpeed: -this.state.xSpeed});
-            this.setRandomColors();
-        }
-
-        if (this.state.y + heightDVDLogo >= this.props.height || this.state.y <= 0) {
-            this.setState({ySpeed: -this.state.ySpeed});
-            this.setRandomColors();
+        if(this.state.collisionCount >= this.state.collisionCountForCorner) {
+            this.moveDVDLogoToCorner();
+        } else {
+            this.moveDVDLogoNormally();
         }
     }
 
