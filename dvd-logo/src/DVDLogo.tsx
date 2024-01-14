@@ -37,7 +37,7 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
             g: DVDLogo.getRandomNumber(100, 256),
             b: DVDLogo.getRandomNumber(100, 256),
             collisionCount: 0,
-            collisionCountForCorner: 10,
+            collisionCountForCorner: 5,
             goingToCorner: false
         }
     }
@@ -50,17 +50,13 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
         })
     }
 
-    moveDVDLogoToCorner() {
-        if(!this.state.goingToCorner){ 
-            this.moveDirectionOfLogoToCorner();
-        };
-
+    moveingDVDLogoToCorner() {
         if (this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0) {
             const newXPosition = this.state.x < widthDVDLogo/2 ? 1 : this.props.width - widthDVDLogo - 1;
             const newYPosition = this.state.y < heightDVDLogo/2 ? 1 : this.props.height - heightDVDLogo - 1;
             const newXSpeed = -Math.abs(this.state.xSpeed)/this.state.xSpeed;
             const newYSpeed = -Math.abs(this.state.ySpeed)/this.state.ySpeed;
-            const newCollisionAmountNeeded = 5 + Math.floor(Math.random() * 15);
+            const newCollisionAmountNeeded = 15;
             this.setState({
                 x: newXPosition,
                 y: newYPosition,
@@ -75,6 +71,7 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
     }
 
     moveDirectionOfLogoToCorner() {
+        console.log("Going to corner!!!");
         let targetCorner = this.getTargetCorner();
         let newXSpeed = targetCorner.x - this.state.x;
         let newYSpeed = targetCorner.y - this.state.y;
@@ -101,16 +98,43 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
     };
 
     moveDVDLogoNormally() {
-        if (this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0) {
-            const numCollisions = this.state.collisionCount + 1;
-            this.setState({xSpeed: -this.state.xSpeed, collisionCount: numCollisions});
+        if (this.atXCollision()) {
+            this.setState({xSpeed: -this.state.xSpeed, collisionCount: this.state.collisionCount + 1});
             this.setRandomColors();
         }
 
-        if (this.state.y + heightDVDLogo >= this.props.height || this.state.y <= 0) {
-            const numCollisions = this.state.collisionCount + 1;
-            this.setState({ySpeed: -this.state.ySpeed, collisionCount: numCollisions});
+        if (this.atYCollision()) {
+            this.setState({ySpeed: -this.state.ySpeed, collisionCount: this.state.collisionCount + 1});
             this.setRandomColors();
+        }
+    }
+
+    shouldGoToCorner() {
+        const goingRight = this.state.xSpeed > 0;
+        const goingDown = this.state.ySpeed > 0;
+        if(this.atXCollision()) {
+            return goingDown ? (this.state.y <= this.props.height/2.5) : (this.state.y >= this.props.height/2.5);
+        };
+        if(this.atYCollision()) {
+            return goingRight ? (this.state.x <= this.props.width/2) : (this.state.x >= this.props.width/2);
+        };
+        return false;
+    };
+
+    atXCollision() {
+        if(this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0){
+          return true;
+        } else {
+          return false;  
+        }
+        
+    }
+
+    atYCollision() {
+        if (this.state.y + heightDVDLogo >= this.props.height || this.state.y <= 0) {
+            return true;
+        } else {
+          return false;  
         }
     }
 
@@ -128,10 +152,15 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
             y: this.state.y + this.state.ySpeed
         });
 
-        if(this.state.collisionCount >= this.state.collisionCountForCorner) {
-            this.moveDVDLogoToCorner();
+        if(this.state.goingToCorner) {
+            this.moveingDVDLogoToCorner();
         } else {
             this.moveDVDLogoNormally();
+            if(this.state.collisionCount >= this.state.collisionCountForCorner){
+                if(this.shouldGoToCorner()) {
+                    this.moveDirectionOfLogoToCorner();
+                } 
+            }
         }
     }
 
