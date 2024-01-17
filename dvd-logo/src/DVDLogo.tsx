@@ -50,7 +50,7 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
         })
     }
 
-    moveingDVDLogoToCorner() {
+    movingDVDLogoToCorner() {
         if (this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0) {
             const newXPosition = this.state.x < widthDVDLogo/2 ? 1 : this.props.width - widthDVDLogo - 1;
             const newYPosition = this.state.y < heightDVDLogo/2 ? 1 : this.props.height - heightDVDLogo - 1;
@@ -153,7 +153,7 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
         });
 
         if(this.state.goingToCorner) {
-            this.moveingDVDLogoToCorner();
+            this.movingDVDLogoToCorner();
         } else {
             this.moveDVDLogoNormally();
             if(this.state.collisionCount >= this.state.collisionCountForCorner){
