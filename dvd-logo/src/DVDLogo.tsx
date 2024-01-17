@@ -42,6 +42,10 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
         }
     }
 
+    static getRandomNumber(min: number, max: number): number {
+        return Math.random() * (max - min) + min;
+    }
+
     setRandomColors() {
         this.setState({
             r: DVDLogo.getRandomNumber(100, 256),
@@ -50,7 +54,68 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
         })
     }
 
-    movingDVDLogoToCorner() {
+    getTargetCorner() {
+        let targetCorner = {x:0, y:0};
+        if( this.state.xSpeed > 0){
+            targetCorner.x = this.props.width - widthDVDLogo;
+        }
+        if( this.state.ySpeed > 0){
+            targetCorner.y = this.props.height - heightDVDLogo;
+        } 
+        return targetCorner;
+    };
+
+    isLogoCollidingWithTheSide() {
+        if(this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0){
+          return true;
+        } else {
+          return false;  
+        }
+    }
+
+    isLogoCollidingWithTheTopOrBottom() {
+        if (this.state.y + heightDVDLogo >= this.props.height || this.state.y <= 0) {
+            return true;
+        } else {
+          return false;  
+        }
+    }
+
+    shouldGoToCorner() {
+        if(this.state.collisionCount < this.state.collisionCountForCorner){
+            return false
+        }
+
+        // Check if the angle of the dvd logo is not super sharp
+        const goingRight = this.state.xSpeed > 0;
+        const goingDown = this.state.ySpeed > 0;
+        if(this.isLogoCollidingWithTheSide()) {
+            return goingDown ? (this.state.y <= this.props.height/2.5) : (this.state.y >= this.props.height/2.5);
+        };
+        if(this.isLogoCollidingWithTheTopOrBottom()) {
+            return goingRight ? (this.state.x <= this.props.width/2) : (this.state.x >= this.props.width/2);
+        };
+        return false;
+    };
+
+    moveDirectionOfLogoToCorner() {
+        console.log("Going to corner!!!");
+        console.log("This is the collision count and the required count: ", this.state.collisionCount, this.state.collisionCountForCorner);
+        let targetCorner = this.getTargetCorner();
+        let newXSpeed = targetCorner.x - this.state.x;
+        let newYSpeed = targetCorner.y - this.state.y;
+        while(Math.abs(newXSpeed) > 1.4 || Math.abs(newYSpeed) > 1.4) {
+            newXSpeed = newXSpeed / 2;
+            newYSpeed = newYSpeed / 2;
+        }
+        this.setState({
+            goingToCorner: true,
+            xSpeed: newXSpeed,
+            ySpeed: newYSpeed
+        });
+    }
+
+    checkForCornerCollision() {
         if (this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0) {
             const newXPosition = this.state.x < widthDVDLogo/2 ? 1 : this.props.width - widthDVDLogo - 1;
             const newYPosition = this.state.y < heightDVDLogo/2 ? 1 : this.props.height - heightDVDLogo - 1;
@@ -70,80 +135,16 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
         }
     }
 
-    moveDirectionOfLogoToCorner() {
-        console.log("Going to corner!!!");
-        let targetCorner = this.getTargetCorner();
-        let newXSpeed = targetCorner.x - this.state.x;
-        let newYSpeed = targetCorner.y - this.state.y;
-        while(Math.abs(newXSpeed) > 1.4 || Math.abs(newYSpeed) > 1.4) {
-            newXSpeed = newXSpeed / 2;
-            newYSpeed = newYSpeed / 2;
-        }
-        this.setState({
-            goingToCorner: true,
-            xSpeed: newXSpeed,
-            ySpeed: newYSpeed
-        });
-    }
-
-    getTargetCorner() {
-        let targetCorner = {x:0, y:0};
-        if( this.state.xSpeed > 0){
-            targetCorner.x = this.props.width - widthDVDLogo;
-        }
-        if( this.state.ySpeed > 0){
-            targetCorner.y = this.props.height - heightDVDLogo;
-        } 
-        return targetCorner;
-    };
-
-    moveDVDLogoNormally() {
-        if (this.atXCollision()) {
+    checkForNonCornerCollision() {
+        if (this.isLogoCollidingWithTheSide()) {
             this.setState({xSpeed: -this.state.xSpeed, collisionCount: this.state.collisionCount + 1});
             this.setRandomColors();
         }
 
-        if (this.atYCollision()) {
+        if (this.isLogoCollidingWithTheTopOrBottom()) {
             this.setState({ySpeed: -this.state.ySpeed, collisionCount: this.state.collisionCount + 1});
             this.setRandomColors();
         }
-    }
-
-    shouldGoToCorner() {
-        const goingRight = this.state.xSpeed > 0;
-        const goingDown = this.state.ySpeed > 0;
-        if(this.atXCollision()) {
-            return goingDown ? (this.state.y <= this.props.height/2.5) : (this.state.y >= this.props.height/2.5);
-        };
-        if(this.atYCollision()) {
-            return goingRight ? (this.state.x <= this.props.width/2) : (this.state.x >= this.props.width/2);
-        };
-        return false;
-    };
-
-    atXCollision() {
-        if(this.state.x + widthDVDLogo >= this.props.width || this.state.x <= 0){
-          return true;
-        } else {
-          return false;  
-        }
-        
-    }
-
-    atYCollision() {
-        if (this.state.y + heightDVDLogo >= this.props.height || this.state.y <= 0) {
-            return true;
-        } else {
-          return false;  
-        }
-    }
-
-    static getRandomNumber(min: number, max: number): number {
-        return Math.random() * (max - min) + min;
-    }
-
-    componentDidMount() {
-        setInterval(() => this.moveDVDLogo(), MS_PER_FRAME);
     }
 
     moveDVDLogo() {
@@ -153,15 +154,17 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
         });
 
         if(this.state.goingToCorner) {
-            this.movingDVDLogoToCorner();
+            this.checkForCornerCollision();
         } else {
-            this.moveDVDLogoNormally();
-            if(this.state.collisionCount >= this.state.collisionCountForCorner){
-                if(this.shouldGoToCorner()) {
-                    this.moveDirectionOfLogoToCorner();
-                } 
+            this.checkForNonCornerCollision();
+            if(this.shouldGoToCorner()) {
+                this.moveDirectionOfLogoToCorner();
             }
         }
+    }
+
+    componentDidMount() {
+        setInterval(() => this.moveDVDLogo(), MS_PER_FRAME);
     }
 
     render() {
