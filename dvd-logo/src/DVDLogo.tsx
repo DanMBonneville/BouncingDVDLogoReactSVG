@@ -100,7 +100,6 @@ class DVDLogo extends Component<DVDLogoProps, DVDLogoState> {
 
     moveDirectionOfLogoToCorner() {
         console.log("Going to corner!!!");
-        console.log("This is the collision count and the required count: ", this.state.collisionCount, this.state.collisionCountForCorner);
         let targetCorner = this.getTargetCorner();
         let newXSpeed = targetCorner.x - this.state.x;
         let newYSpeed = targetCorner.y - this.state.y;
